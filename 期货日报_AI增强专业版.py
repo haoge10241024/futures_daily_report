@@ -17,22 +17,33 @@ from bs4 import BeautifulSoup
 import feedparser
 import re
 
-# 配置中文字体（兼容Linux服务器）
-import platform
+# 配置字体（避免Linux服务器报错）
 import warnings
-warnings.filterwarnings('ignore')
+import logging
 
-# 根据操作系统选择字体
-if platform.system() == 'Windows':
-    rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
-elif platform.system() == 'Darwin':  # macOS
-    rcParams['font.sans-serif'] = ['Arial Unicode MS', 'Heiti TC', 'STHeiti']
-else:  # Linux (Streamlit Cloud)
-    # Linux服务器使用DejaVu Sans，虽然不支持中文，但不会报错
-    rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial']
-    # 或者使用 sans-serif 通用字体
-    
+# 忽略字体警告
+warnings.filterwarnings('ignore', category=UserWarning)
+warnings.filterwarnings('ignore', module='matplotlib')
+logging.getLogger('matplotlib').setLevel(logging.ERROR)
+
+# 清除matplotlib字体缓存
+try:
+    import matplotlib.font_manager as fm
+    fm._rebuild()
+except:
+    pass
+
+# 使用系统默认字体，不指定中文字体
+rcParams['font.family'] = 'sans-serif'
 rcParams['axes.unicode_minus'] = False
+
+# 只在Windows本地开发时使用中文字体
+import platform
+if platform.system() == 'Windows':
+    try:
+        rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei']
+    except:
+        pass
 
 # ============ API配置 ============
 # 默认从环境变量读取（本地开发可配置，部署时为空）
