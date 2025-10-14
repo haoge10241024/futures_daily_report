@@ -1537,20 +1537,17 @@ st.markdown("### 📝 行情描述")
 col_desc1, col_desc2 = st.columns([3, 1])
 
 with col_desc1:
-    # 初始化输入框内容（只在第一次）
-    if 'user_description_input' not in st.session_state:
+    # 确定显示的内容：优先显示AI生成的，否则显示自动生成的
+    default_description = st.session_state.get('ai_generated_description', '')
+    if not default_description:
         default_description = st.session_state.get('day_description', '') + '\n\n' + st.session_state.get('night_description', '')
-        st.session_state.user_description_input = default_description
     
     user_description = st.text_area(
         "请输入行情描述（可采用自动生成的文案或自行编辑，也可以使用AI生成）",
-        value=st.session_state.user_description_input,
+        value=default_description,
         height=200,
         key="user_description"
     )
-    
-    # 同步到session_state
-    st.session_state.user_description_input = user_description
 
 with col_desc2:
     st.write("")
@@ -1583,29 +1580,23 @@ with col_desc2:
     if st.session_state.get('temp_ai_desc'):
         st.write("📝 生成的行情描述：")
         st.text_area("", value=st.session_state.temp_ai_desc, height=200, key="display_ai_desc", label_visibility="collapsed")
-        if st.button("📋 一键添加到上方输入框", key="copy_desc", use_container_width=True):
-            st.session_state.user_description_input = st.session_state.temp_ai_desc
-            st.rerun()
+        st.caption("💡 请复制上面的内容到上方输入框")
 
 # 主要观点区域
 st.markdown("### 💡 主要观点")
 col_view1, col_view2 = st.columns([3, 1])
 
 with col_view1:
-    # 初始化输入框内容（只在第一次）
-    if 'main_view_input' not in st.session_state:
-        st.session_state.main_view_input = ""
+    # 确定显示的内容：优先显示AI生成的
+    default_view = st.session_state.get('ai_generated_view', '')
     
     main_view = st.text_area(
         "请输入主要观点（可自行编辑或AI生成）",
-        value=st.session_state.main_view_input,
+        value=default_view,
         height=200,
         key="main_view",
         placeholder="输入您对市场的主要判断和投资建议..."
     )
-    
-    # 同步到session_state
-    st.session_state.main_view_input = main_view
 
 with col_view2:
     st.write("")
@@ -1656,22 +1647,19 @@ with col_view2:
     if st.session_state.get('temp_ai_view'):
         st.write("📝 生成的主要观点：")
         st.text_area("", value=st.session_state.temp_ai_view, height=250, key="display_ai_view", label_visibility="collapsed")
-        if st.button("📋 一键添加到上方输入框", key="copy_view", use_container_width=True):
-            st.session_state.main_view_input = st.session_state.temp_ai_view
-            st.rerun()
+        st.caption("💡 请复制上面的内容到上方输入框")
 
 # 新闻资讯区域
 st.markdown("### 📰 新闻资讯")
 col_news1, col_news2 = st.columns([3, 1])
 
 with col_news1:
-    # 初始化输入框内容（只在第一次）
-    if 'news_content_input' not in st.session_state:
-        st.session_state.news_content_input = ""
+    # 确定显示的内容：优先显示AI生成的
+    default_news = st.session_state.get('ai_generated_news', '')
     
     news_content = st.text_area(
         "请输入新闻资讯（可自行编辑或AI生成）",
-        value=st.session_state.news_content_input,
+        value=default_news,
         height=300,
         key="news_content",
         placeholder="""输入或生成新闻资讯，格式示例：
@@ -1686,9 +1674,6 @@ with col_news1:
 
 💡 提示：可手动输入，也可点击右侧"AI生成"按钮自动整理"""
     )
-    
-    # 同步到session_state
-    st.session_state.news_content_input = news_content
 
 with col_news2:
     st.write("")
@@ -1721,9 +1706,7 @@ with col_news2:
     if st.session_state.get('temp_ai_news'):
         st.write("📝 生成的新闻资讯：")
         st.text_area("", value=st.session_state.temp_ai_news, height=300, key="display_ai_news", label_visibility="collapsed")
-        if st.button("📋 一键添加到上方输入框", key="copy_news", use_container_width=True):
-            st.session_state.news_content_input = st.session_state.temp_ai_news
-            st.rerun()
+        st.caption("💡 请复制上面的内容到上方输入框")
     else:
         st.write("")
         st.info("💡 AI会整理所有搜索到的新闻")
