@@ -1291,25 +1291,33 @@ st.set_page_config(page_title="期货日报生成器（AI赋能版）", page_ico
 st.sidebar.title("⚙️ API配置")
 st.sidebar.markdown("请输入您的API密钥以使用AI功能")
 
+# 初始化API密钥的session state
+if 'deepseek_api_key' not in st.session_state:
+    st.session_state.deepseek_api_key = DEFAULT_DEEPSEEK_API_KEY
+if 'serper_api_key' not in st.session_state:
+    st.session_state.serper_api_key = DEFAULT_SERPER_API_KEY
+
 # DeepSeek API配置
 st.sidebar.subheader("1️⃣ DeepSeek API")
 deepseek_key_input = st.sidebar.text_input(
     "DeepSeek API Key",
-    value=DEFAULT_DEEPSEEK_API_KEY,
+    value=st.session_state.deepseek_api_key if st.session_state.deepseek_api_key else DEFAULT_DEEPSEEK_API_KEY,
     type="password",
-    help="用于AI生成行情描述、主要观点和新闻资讯"
+    help="用于AI生成行情描述、主要观点和新闻资讯",
+    key="deepseek_input"
 )
 
 if deepseek_key_input:
     if deepseek_key_input.startswith("sk-"):
         st.sidebar.success("✅ DeepSeek API已配置")
+        st.session_state.deepseek_api_key = deepseek_key_input
         DEEPSEEK_API_KEY = deepseek_key_input
     else:
         st.sidebar.error("❌ DeepSeek API格式错误（应以sk-开头）")
         DEEPSEEK_API_KEY = ""
 else:
     st.sidebar.warning("⚠️ 未配置DeepSeek API")
-    DEEPSEEK_API_KEY = ""
+    DEEPSEEK_API_KEY = st.session_state.deepseek_api_key if st.session_state.deepseek_api_key else ""
 
 st.sidebar.markdown("---")
 
@@ -1317,21 +1325,23 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("2️⃣ Serper API")
 serper_key_input = st.sidebar.text_input(
     "Serper API Key",
-    value=DEFAULT_SERPER_API_KEY,
+    value=st.session_state.serper_api_key if st.session_state.serper_api_key else DEFAULT_SERPER_API_KEY,
     type="password",
-    help="用于搜索新闻资讯和专业数据"
+    help="用于搜索新闻资讯和专业数据",
+    key="serper_input"
 )
 
 if serper_key_input:
     if len(serper_key_input) >= 30:  # Serper密钥通常较长
         st.sidebar.success("✅ Serper API已配置")
+        st.session_state.serper_api_key = serper_key_input
         SERPER_API_KEY = serper_key_input
     else:
         st.sidebar.error("❌ Serper API格式错误")
         SERPER_API_KEY = ""
 else:
     st.sidebar.warning("⚠️ 未配置Serper API")
-    SERPER_API_KEY = ""
+    SERPER_API_KEY = st.session_state.serper_api_key if st.session_state.serper_api_key else ""
 
 st.sidebar.markdown("---")
 
@@ -1618,11 +1628,14 @@ with col_desc2:
                         st.session_state.commodity_name,
                         st.session_state.custom_date.strftime('%Y-%m-%d')
                     )
-                    if ai_desc and not ai_desc.startswith("AI生成失败") and not ai_desc.startswith("AI生成出错"):
+                    if ai_desc and len(ai_desc) > 50 and not ai_desc.startswith("AI生成失败") and not ai_desc.startswith("AI生成出错"):
                         # 保存到独立的session state变量
                         st.session_state.ai_generated_description = ai_desc
                         st.success("✅ 行情描述生成成功！")
                         st.rerun()
+                    elif not ai_desc or len(ai_desc) == 0:
+                        st.error("❌ AI返回了空内容")
+                        st.warning(f"💡 请检查：API密钥={len(DEEPSEEK_API_KEY)}字符")
                     else:
                         st.error(f"❌ {ai_desc}")
             except Exception as e:
@@ -1686,13 +1699,11 @@ with col_view2:
                 
                 # 第3步：AI综合分析生成观点
                 with st.spinner("🤖 AI正在进行8大维度专业分析并生成观点...请稍候"):
-                    print(f"[DEBUG] 开始调用AI生成主要观点...")
-                    print(f"[DEBUG] 品种名称: {st.session_state.commodity_name}")
-                    print(f"[DEBUG] 日期: {st.session_state.custom_date.strftime('%Y-%m-%d')}")
-                    print(f"[DEBUG] 市场数据: {st.session_state.market_data_dict}")
-                    print(f"[DEBUG] 新闻数量: {len(st.session_state.news_list)}")
-                    print(f"[DEBUG] 专业数据维度: {list(professional_data.keys()) if professional_data else []}")
-                    print(f"[DEBUG] 技术指标: {technical_indicators}")
+                    # 显示调试信息（仅开发模式）
+                    debug_mode = True  # 设置为True可在UI显示调试信息
+                    if debug_mode:
+                        st.info(f"🔧 调试：品种={st.session_state.commodity_name}, 日期={st.session_state.custom_date.strftime('%Y-%m-%d')}")
+                        st.info(f"🔧 调试：API密钥长度={len(DEEPSEEK_API_KEY)}字符")
                     
                     ai_view = ai_generate_main_view(
                         st.session_state.commodity_name,
@@ -1703,17 +1714,20 @@ with col_view2:
                         technical_indicators  # 传入技术指标
                     )
                     
-                    print(f"[DEBUG] AI返回的内容: {ai_view[:200] if ai_view else 'None'}")
+                    if debug_mode:
+                        st.info(f"🔧 调试：AI返回长度={len(ai_view) if ai_view else 0}字符")
                     
-                    if ai_view and not ai_view.startswith("AI生成失败") and not ai_view.startswith("AI生成出错"):
+                    if ai_view and len(ai_view) > 50 and not ai_view.startswith("AI生成失败") and not ai_view.startswith("AI生成出错"):
                         # 保存到独立的session state变量
                         st.session_state.ai_generated_view = ai_view
                         st.success("✅ 主要观点生成完成！基于8大维度专业分析")
-                        print(f"[DEBUG] 保存到session_state成功，即将rerun...")
                         st.rerun()
+                    elif not ai_view or len(ai_view) == 0:
+                        st.error("❌ AI返回了空内容")
+                        st.warning(f"💡 可能原因：API密钥无效、网络问题、或API额度用完")
                     else:
-                        st.error(f"❌ {ai_view}")
-                        st.warning(f"🔍 调试信息：返回内容={ai_view[:100] if ai_view else 'None'}")
+                        st.error(f"❌ 生成失败")
+                        st.warning(f"💡 错误信息：{ai_view[:200]}")
             except Exception as e:
                 st.error(f"❌ 生成失败：{str(e)}")
                 import traceback
