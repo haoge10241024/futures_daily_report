@@ -1552,39 +1552,35 @@ with col_desc2:
         elif not st.session_state.get('commodity_name'):
             st.warning("⚠️ 请先输入品种名称并生成K线图")
         else:
-            print(f"[INFO] ========== 用户点击：AI生成行情描述 ==========")
-            print(f"[INFO] session_state.commodity_name: {st.session_state.get('commodity_name')}")
-            print(f"[INFO] session_state.custom_date: {st.session_state.get('custom_date')}")
-            print(f"[INFO] DEEPSEEK_API_KEY长度: {len(DEEPSEEK_API_KEY)}")
+            # 显示调试信息
+            st.info(f"🔧 开始生成... 品种={st.session_state.get('commodity_name')}, API密钥长度={len(DEEPSEEK_API_KEY)}")
+            
             try:
                 with st.spinner("🤖 AI正在生成行情描述...请稍候"):
-                    print(f"[INFO] 开始调用 ai_generate_market_description...")
                     ai_desc = ai_generate_market_description(
                         st.session_state.market_data_dict,
                         st.session_state.commodity_name,
                         st.session_state.custom_date.strftime('%Y-%m-%d')
                     )
-                    print(f"[INFO] AI返回内容长度: {len(ai_desc) if ai_desc else 0}")
-                    print(f"[INFO] AI返回内容前100字符: {ai_desc[:100] if ai_desc and len(ai_desc) > 0 else 'None'}")
+                    
+                    # 显示返回结果的调试信息
+                    st.info(f"🔧 AI返回长度={len(ai_desc) if ai_desc else 0}, 内容前50字={ai_desc[:50] if ai_desc else 'None'}")
                     
                     if ai_desc and len(ai_desc) > 50 and not ai_desc.startswith("AI生成失败") and not ai_desc.startswith("AI生成出错"):
                         # 保存到独立的session state变量
                         st.session_state.ai_generated_description = ai_desc
-                        print(f"[INFO] 成功保存到session_state，准备rerun")
-                        st.success("✅ 行情描述生成成功！")
+                        st.success("✅ 行情描述生成成功！内容已保存，即将刷新...")
                         st.rerun()
                     elif not ai_desc or len(ai_desc) == 0:
-                        print(f"[ERROR] AI返回了空内容")
                         st.error("❌ AI返回了空内容")
-                        st.warning(f"💡 请检查：API密钥={len(DEEPSEEK_API_KEY)}字符")
+                        st.warning(f"💡 API密钥={len(DEEPSEEK_API_KEY)}字符, URL={DEEPSEEK_API_URL}")
                     else:
-                        print(f"[ERROR] AI返回异常: {ai_desc[:100]}")
-                        st.error(f"❌ {ai_desc}")
+                        st.error(f"❌ 生成失败")
+                        st.code(ai_desc[:200])
             except Exception as e:
-                print(f"[ERROR] 异常: {str(e)}")
+                st.error(f"❌ 异常：{str(e)}")
                 import traceback
-                print(f"[ERROR] 详细: {traceback.format_exc()}")
-                st.error(f"❌ 生成失败：{str(e)}")
+                st.code(traceback.format_exc())
 
 # 主要观点区域
 st.markdown("### 💡 主要观点")
