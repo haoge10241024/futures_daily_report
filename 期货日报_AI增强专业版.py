@@ -563,14 +563,23 @@ def ai_generate_market_description(market_data: dict, commodity_name: str, date_
         
         response = requests.post(DEEPSEEK_API_URL, headers=headers, json=data, timeout=60)
         
+        print(f"[DEBUG] AI生成行情描述 - 状态码: {response.status_code}")
+        
         if response.status_code == 200:
             result = response.json()
-            return result['choices'][0]['message']['content'].strip()
+            content = result['choices'][0]['message']['content'].strip()
+            print(f"[DEBUG] AI生成行情描述 - 返回内容长度: {len(content)}字符")
+            print(f"[DEBUG] AI生成行情描述 - 前100字符: {content[:100]}")
+            return content
         else:
-            return f"AI生成失败 (状态码: {response.status_code})"
+            error_msg = f"AI生成失败 (状态码: {response.status_code})"
+            print(f"[ERROR] {error_msg}")
+            return error_msg
             
     except Exception as e:
-        return f"AI生成出错: {str(e)}"
+        error_msg = f"AI生成出错: {str(e)}"
+        print(f"[ERROR] {error_msg}")
+        return error_msg
 
 
 def ai_generate_news_summary(commodity_name: str, date_str: str, news_list: list, professional_data: dict = None) -> str:
@@ -831,14 +840,29 @@ def ai_generate_main_view(commodity_name: str, date_str: str, market_data: dict,
         
         response = requests.post(DEEPSEEK_API_URL, headers=headers, json=data, timeout=90)
         
+        print(f"[DEBUG] AI生成主要观点 - 状态码: {response.status_code}")
+        
         if response.status_code == 200:
             result = response.json()
-            return result['choices'][0]['message']['content'].strip()
+            content = result['choices'][0]['message']['content'].strip()
+            print(f"[DEBUG] AI生成主要观点 - 返回内容长度: {len(content)}字符")
+            print(f"[DEBUG] AI生成主要观点 - 前100字符: {content[:100]}")
+            return content
         else:
-            return f"AI生成失败 (状态码: {response.status_code})"
+            error_msg = f"AI生成失败 (状态码: {response.status_code})"
+            print(f"[ERROR] AI生成主要观点 - {error_msg}")
+            if response.status_code == 401:
+                print(f"[ERROR] API密钥无效或过期")
+            elif response.status_code == 429:
+                print(f"[ERROR] API调用频率过高或额度用完")
+            return error_msg
             
     except Exception as e:
-        return f"AI生成出错: {str(e)}"
+        error_msg = f"AI生成出错: {str(e)}"
+        print(f"[ERROR] AI生成主要观点 - {error_msg}")
+        import traceback
+        print(f"[ERROR] 详细错误: {traceback.format_exc()}")
+        return error_msg
 
 
 # ============ 品种映射（用于输入提示）============
@@ -1662,6 +1686,14 @@ with col_view2:
                 
                 # 第3步：AI综合分析生成观点
                 with st.spinner("🤖 AI正在进行8大维度专业分析并生成观点...请稍候"):
+                    print(f"[DEBUG] 开始调用AI生成主要观点...")
+                    print(f"[DEBUG] 品种名称: {st.session_state.commodity_name}")
+                    print(f"[DEBUG] 日期: {st.session_state.custom_date.strftime('%Y-%m-%d')}")
+                    print(f"[DEBUG] 市场数据: {st.session_state.market_data_dict}")
+                    print(f"[DEBUG] 新闻数量: {len(st.session_state.news_list)}")
+                    print(f"[DEBUG] 专业数据维度: {list(professional_data.keys()) if professional_data else []}")
+                    print(f"[DEBUG] 技术指标: {technical_indicators}")
+                    
                     ai_view = ai_generate_main_view(
                         st.session_state.commodity_name,
                         st.session_state.custom_date.strftime('%Y-%m-%d'),
@@ -1671,15 +1703,21 @@ with col_view2:
                         technical_indicators  # 传入技术指标
                     )
                     
+                    print(f"[DEBUG] AI返回的内容: {ai_view[:200] if ai_view else 'None'}")
+                    
                     if ai_view and not ai_view.startswith("AI生成失败") and not ai_view.startswith("AI生成出错"):
                         # 保存到独立的session state变量
                         st.session_state.ai_generated_view = ai_view
                         st.success("✅ 主要观点生成完成！基于8大维度专业分析")
+                        print(f"[DEBUG] 保存到session_state成功，即将rerun...")
                         st.rerun()
                     else:
                         st.error(f"❌ {ai_view}")
+                        st.warning(f"🔍 调试信息：返回内容={ai_view[:100] if ai_view else 'None'}")
             except Exception as e:
                 st.error(f"❌ 生成失败：{str(e)}")
+                import traceback
+                st.error(f"详细错误: {traceback.format_exc()}")
 
 # 新闻资讯区域
 st.markdown("### 📰 新闻资讯")
