@@ -115,7 +115,7 @@
 
 访问已部署的在线地址：
 ```
-https://你的streamlit应用地址.streamlit.app
+https://futuresdaily.streamlit.app/
 ```
 
 **优势：**
