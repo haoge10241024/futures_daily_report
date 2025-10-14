@@ -17,31 +17,26 @@ from bs4 import BeautifulSoup
 import feedparser
 import re
 
-# 配置字体（避免Linux服务器报错）
+# 配置字体（完全避免Linux字体错误）
 import warnings
 import logging
-
-# 忽略字体警告
-warnings.filterwarnings('ignore', category=UserWarning)
-warnings.filterwarnings('ignore', module='matplotlib')
-logging.getLogger('matplotlib').setLevel(logging.ERROR)
-
-# 清除matplotlib字体缓存
-try:
-    import matplotlib.font_manager as fm
-    fm._rebuild()
-except:
-    pass
-
-# 使用系统默认字体，不指定中文字体
-rcParams['font.family'] = 'sans-serif'
-rcParams['axes.unicode_minus'] = False
-
-# 只在Windows本地开发时使用中文字体
 import platform
+
+# 彻底忽略所有matplotlib字体警告
+warnings.filterwarnings('ignore')
+logging.getLogger('matplotlib').setLevel(logging.CRITICAL)
+logging.getLogger('matplotlib.font_manager').setLevel(logging.CRITICAL)
+
+# 强制设置matplotlib使用默认字体，不使用中文字体
+import matplotlib
+matplotlib.rcParams['font.family'] = 'sans-serif'
+matplotlib.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial']
+matplotlib.rcParams['axes.unicode_minus'] = False
+
+# Windows本地开发时使用中文字体（仅用于兼容）
 if platform.system() == 'Windows':
     try:
-        rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei']
+        matplotlib.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'Arial']
     except:
         pass
 
@@ -1022,13 +1017,20 @@ def create_k_line_chart(data, symbol, folder_path):
     if data.empty:
         print("数据为空，无法生成K线图。")
         return None
+    
+    # 临时重置matplotlib配置，避免Linux字体错误
+    import matplotlib
+    matplotlib.rcParams['font.family'] = 'sans-serif'
+    matplotlib.rcParams['font.sans-serif'] = ['DejaVu Sans']
+    matplotlib.rcParams['axes.unicode_minus'] = False
+    
     data.set_index('datetime', inplace=True)
     data = data[['open', 'high', 'low', 'close']]
     data.columns = ['Open', 'High', 'Low', 'Close']
     fig, ax = plt.subplots(figsize=(10, 6))
     mpf.plot(data, type='candle', style='charles', ax=ax)
     k_line_chart_path = os.path.join(folder_path, 'k_line_chart.png')
-    plt.savefig(k_line_chart_path)
+    plt.savefig(k_line_chart_path, dpi=100)
     plt.close(fig)
     return k_line_chart_path
 
