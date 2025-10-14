@@ -1474,6 +1474,12 @@ if 'full_contract' not in st.session_state:
     st.session_state.full_contract = ""
 if 'custom_date' not in st.session_state:
     st.session_state.custom_date = datetime.now()
+if 'temp_ai_desc' not in st.session_state:
+    st.session_state.temp_ai_desc = ""
+if 'temp_ai_view' not in st.session_state:
+    st.session_state.temp_ai_view = ""
+if 'temp_ai_news' not in st.session_state:
+    st.session_state.temp_ai_news = ""
 
 # K线图生成
 if st.button("🎨 生成K线图", type="primary"):
@@ -1547,40 +1553,34 @@ with col_desc2:
     st.write("")
     st.write("")
     
-    # 显示当前状态（调试用）
-    if st.session_state.get('market_data_dict'):
-        st.caption(f"✅ 已有数据")
-    
     if st.button("🤖 AI生成行情描述", use_container_width=True, key="btn_gen_desc"):
-        st.write("🔧 按钮已点击！")  # 测试按钮是否被点击
-        
         if not st.session_state.get('market_data_dict'):
             st.warning("⚠️ 请先生成K线图以获取市场数据")
         elif not st.session_state.get('commodity_name'):
             st.warning("⚠️ 请先输入品种名称并生成K线图")
         else:
-            st.write(f"🔧 品种={st.session_state.get('commodity_name')}")
-            st.write(f"🔧 API密钥长度={len(DEEPSEEK_API_KEY)}")
-            
             try:
-                st.write("🔧 开始调用AI...")
-                ai_desc = ai_generate_market_description(
-                    st.session_state.market_data_dict,
-                    st.session_state.commodity_name,
-                    st.session_state.custom_date.strftime('%Y-%m-%d')
-                )
-                
-                st.write(f"🔧 AI返回了: {len(ai_desc) if ai_desc else 0} 字符")
+                with st.spinner("🤖 AI正在生成..."):
+                    ai_desc = ai_generate_market_description(
+                        st.session_state.market_data_dict,
+                        st.session_state.commodity_name,
+                        st.session_state.custom_date.strftime('%Y-%m-%d')
+                    )
                 
                 if ai_desc and len(ai_desc) > 50:
-                    st.success("✅ 生成成功！")
-                    st.write("📝 生成的内容：")
-                    st.text_area("AI生成的行情描述", value=ai_desc, height=200, key="temp_ai_desc")
-                    st.info("💡 请复制上面的内容，粘贴到上方的行情描述框中")
+                    # 保存到session_state
+                    st.session_state.temp_ai_desc = ai_desc
+                    st.success("✅ 生成成功！内容显示在下方")
                 else:
                     st.error(f"❌ 生成失败: {ai_desc}")
             except Exception as e:
                 st.error(f"❌ 异常: {str(e)}")
+    
+    # 显示已生成的内容（如果有）
+    if st.session_state.get('temp_ai_desc'):
+        st.write("📝 生成的行情描述：")
+        st.text_area("", value=st.session_state.temp_ai_desc, height=200, key="display_ai_desc", label_visibility="collapsed")
+        st.caption("💡 请复制上面的内容到上方输入框")
 
 # 主要观点区域
 st.markdown("### 💡 主要观点")
@@ -1601,7 +1601,7 @@ with col_view1:
 with col_view2:
     st.write("")
     st.write("")
-    if st.button("🧠 AI生成主要观点（专业版）", use_container_width=True):
+    if st.button("🧠 AI生成主要观点（专业版）", use_container_width=True, key="btn_gen_view"):
         if not st.session_state.get('market_data_dict'):
             st.warning("⚠️ 请先生成K线图以获取市场数据")
         elif not st.session_state.get('commodity_name'):
@@ -1612,56 +1612,42 @@ with col_view2:
                 with st.spinner("📊 正在计算技术指标..."):
                     market_data_df = st.session_state.get('market_data_df', pd.DataFrame())
                     technical_indicators = calculate_technical_indicators(market_data_df)
-                    if technical_indicators:
-                        st.success(f"✅ 技术指标计算完成：MA5={technical_indicators.get('ma5')}元, RSI={technical_indicators.get('rsi')}")
-                    else:
-                        st.warning("⚠️ 数据不足，无法计算完整技术指标")
                 
                 # 第2步：搜索8大维度专业数据
-                with st.spinner("🔍 正在搜索8大维度专业数据（库存、基差、持仓等）...这可能需要30-60秒"):
+                with st.spinner("🔍 正在搜索8大维度专业数据..."):
                     searcher = EnhancedNewsSearcher()
                     professional_data = searcher.search_professional_data(
                         st.session_state.commodity_name,
                         SERPER_API_KEY,
                         st.session_state.custom_date.strftime('%Y-%m-%d')
                     )
-                    # 保存到session state供新闻资讯使用
                     st.session_state.professional_data = professional_data if professional_data else {}
-                    
-                    if professional_data:
-                        dimensions = list(professional_data.keys())
-                        st.success(f"✅ 专业数据获取完成：{len(dimensions)}个维度 - {', '.join(dimensions[:3])}等")
-                    else:
-                        st.warning("⚠️ 专业维度数据获取有限")
                 
                 # 第3步：AI综合分析生成观点
-                st.write("🔧 开始AI综合分析...")
+                with st.spinner("🤖 AI正在进行8大维度专业分析..."):
+                    ai_view = ai_generate_main_view(
+                        st.session_state.commodity_name,
+                        st.session_state.custom_date.strftime('%Y-%m-%d'),
+                        st.session_state.market_data_dict,
+                        st.session_state.news_list,
+                        professional_data,
+                        technical_indicators
+                    )
                 
-                ai_view = ai_generate_main_view(
-                    st.session_state.commodity_name,
-                    st.session_state.custom_date.strftime('%Y-%m-%d'),
-                    st.session_state.market_data_dict,
-                    st.session_state.news_list,
-                    professional_data,  # 传入专业数据
-                    technical_indicators  # 传入技术指标
-                )
-                
-                st.write(f"🔧 AI返回了: {len(ai_view) if ai_view else 0} 字符")
-                
-                if ai_view and len(ai_view) > 50 and not ai_view.startswith("AI生成失败") and not ai_view.startswith("AI生成出错"):
-                    st.success("✅ 主要观点生成完成！基于8大维度专业分析")
-                    st.write("📝 生成的主要观点：")
-                    st.text_area("AI生成的主要观点", value=ai_view, height=250, key="temp_ai_view")
-                    st.info("💡 请复制上面的内容，粘贴到上方的主要观点框中")
-                elif not ai_view or len(ai_view) == 0:
-                    st.error("❌ AI返回了空内容")
+                if ai_view and len(ai_view) > 50:
+                    # 保存到session_state
+                    st.session_state.temp_ai_view = ai_view
+                    st.success("✅ 主要观点生成完成！内容显示在下方")
                 else:
-                    st.error(f"❌ 生成失败")
-                    st.code(ai_view[:200])
+                    st.error(f"❌ 生成失败: {ai_view}")
             except Exception as e:
-                st.error(f"❌ 生成失败：{str(e)}")
-                import traceback
-                st.error(f"详细错误: {traceback.format_exc()}")
+                st.error(f"❌ 异常: {str(e)}")
+    
+    # 显示已生成的内容（如果有）
+    if st.session_state.get('temp_ai_view'):
+        st.write("📝 生成的主要观点：")
+        st.text_area("", value=st.session_state.temp_ai_view, height=250, key="display_ai_view", label_visibility="collapsed")
+        st.caption("💡 请复制上面的内容到上方输入框")
 
 # 新闻资讯区域
 st.markdown("### 📰 新闻资讯")
@@ -1699,28 +1685,31 @@ with col_news2:
             st.warning("⚠️ 请先输入品种名称并生成K线图")
         else:
             try:
-                st.write("🔧 开始整理新闻资讯...")
-                ai_news = ai_generate_news_summary(
-                    st.session_state.commodity_name,
-                    st.session_state.custom_date.strftime('%Y-%m-%d'),
-                    st.session_state.news_list,
-                    st.session_state.get('professional_data', {})
-                )
+                with st.spinner("🤖 AI正在整理新闻资讯..."):
+                    ai_news = ai_generate_news_summary(
+                        st.session_state.commodity_name,
+                        st.session_state.custom_date.strftime('%Y-%m-%d'),
+                        st.session_state.news_list,
+                        st.session_state.get('professional_data', {})
+                    )
                 
-                st.write(f"🔧 AI返回了: {len(ai_news) if ai_news else 0} 字符")
-                
-                if ai_news and len(ai_news) > 50 and not ai_news.startswith("AI生成失败") and not ai_news.startswith("AI生成出错"):
-                    st.success("✅ 新闻资讯生成完成！已整理所有搜索到的新闻")
-                    st.write("📝 生成的新闻资讯：")
-                    st.text_area("AI生成的新闻资讯", value=ai_news, height=300, key="temp_ai_news")
-                    st.info("💡 请复制上面的内容，粘贴到上方的新闻资讯框中")
+                if ai_news and len(ai_news) > 50:
+                    # 保存到session_state
+                    st.session_state.temp_ai_news = ai_news
+                    st.success("✅ 新闻资讯生成完成！内容显示在下方")
                 else:
                     st.error(f"❌ 生成失败: {ai_news}")
             except Exception as e:
-                st.error(f"❌ 生成失败：{str(e)}")
+                st.error(f"❌ 异常: {str(e)}")
     
-    st.write("")
-    st.info("💡 AI会整理指定日期搜索到的所有新闻资讯，自动去重并统一格式")
+    # 显示已生成的内容（如果有）
+    if st.session_state.get('temp_ai_news'):
+        st.write("📝 生成的新闻资讯：")
+        st.text_area("", value=st.session_state.temp_ai_news, height=300, key="display_ai_news", label_visibility="collapsed")
+        st.caption("💡 请复制上面的内容到上方输入框")
+    else:
+        st.write("")
+        st.info("💡 AI会整理所有搜索到的新闻")
 
 st.markdown("---")
 
