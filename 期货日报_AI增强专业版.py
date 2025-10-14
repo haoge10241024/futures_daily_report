@@ -17,8 +17,21 @@ from bs4 import BeautifulSoup
 import feedparser
 import re
 
-# 使用系统字体 SimHei
-rcParams['font.sans-serif'] = ['SimHei']
+# 配置中文字体（兼容Linux服务器）
+import platform
+import warnings
+warnings.filterwarnings('ignore')
+
+# 根据操作系统选择字体
+if platform.system() == 'Windows':
+    rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
+elif platform.system() == 'Darwin':  # macOS
+    rcParams['font.sans-serif'] = ['Arial Unicode MS', 'Heiti TC', 'STHeiti']
+else:  # Linux (Streamlit Cloud)
+    # Linux服务器使用DejaVu Sans，虽然不支持中文，但不会报错
+    rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial']
+    # 或者使用 sans-serif 通用字体
+    
 rcParams['axes.unicode_minus'] = False
 
 # ============ API配置 ============
