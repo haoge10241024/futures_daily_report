@@ -1546,41 +1546,41 @@ with col_desc1:
 with col_desc2:
     st.write("")
     st.write("")
-    if st.button("🤖 AI生成行情描述", use_container_width=True):
+    
+    # 显示当前状态（调试用）
+    if st.session_state.get('market_data_dict'):
+        st.caption(f"✅ 已有数据")
+    
+    if st.button("🤖 AI生成行情描述", use_container_width=True, key="btn_gen_desc"):
+        st.write("🔧 按钮已点击！")  # 测试按钮是否被点击
+        
         if not st.session_state.get('market_data_dict'):
             st.warning("⚠️ 请先生成K线图以获取市场数据")
         elif not st.session_state.get('commodity_name'):
             st.warning("⚠️ 请先输入品种名称并生成K线图")
         else:
-            # 显示调试信息
-            st.info(f"🔧 开始生成... 品种={st.session_state.get('commodity_name')}, API密钥长度={len(DEEPSEEK_API_KEY)}")
+            st.write(f"🔧 品种={st.session_state.get('commodity_name')}")
+            st.write(f"🔧 API密钥长度={len(DEEPSEEK_API_KEY)}")
             
             try:
-                with st.spinner("🤖 AI正在生成行情描述...请稍候"):
-                    ai_desc = ai_generate_market_description(
-                        st.session_state.market_data_dict,
-                        st.session_state.commodity_name,
-                        st.session_state.custom_date.strftime('%Y-%m-%d')
-                    )
-                    
-                    # 显示返回结果的调试信息
-                    st.info(f"🔧 AI返回长度={len(ai_desc) if ai_desc else 0}, 内容前50字={ai_desc[:50] if ai_desc else 'None'}")
-                    
-                    if ai_desc and len(ai_desc) > 50 and not ai_desc.startswith("AI生成失败") and not ai_desc.startswith("AI生成出错"):
-                        # 保存到独立的session state变量
-                        st.session_state.ai_generated_description = ai_desc
-                        st.success("✅ 行情描述生成成功！内容已保存，即将刷新...")
-                        st.rerun()
-                    elif not ai_desc or len(ai_desc) == 0:
-                        st.error("❌ AI返回了空内容")
-                        st.warning(f"💡 API密钥={len(DEEPSEEK_API_KEY)}字符, URL={DEEPSEEK_API_URL}")
-                    else:
-                        st.error(f"❌ 生成失败")
-                        st.code(ai_desc[:200])
+                st.write("🔧 开始调用AI...")
+                ai_desc = ai_generate_market_description(
+                    st.session_state.market_data_dict,
+                    st.session_state.commodity_name,
+                    st.session_state.custom_date.strftime('%Y-%m-%d')
+                )
+                
+                st.write(f"🔧 AI返回了: {len(ai_desc) if ai_desc else 0} 字符")
+                
+                if ai_desc and len(ai_desc) > 50:
+                    st.success("✅ 生成成功！")
+                    st.write("📝 生成的内容：")
+                    st.text_area("AI生成的行情描述", value=ai_desc, height=200, key="temp_ai_desc")
+                    st.info("💡 请复制上面的内容，粘贴到上方的行情描述框中")
+                else:
+                    st.error(f"❌ 生成失败: {ai_desc}")
             except Exception as e:
-                st.error(f"❌ 异常：{str(e)}")
-                import traceback
-                st.code(traceback.format_exc())
+                st.error(f"❌ 异常: {str(e)}")
 
 # 主要观点区域
 st.markdown("### 💡 主要观点")
