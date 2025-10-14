@@ -41,10 +41,14 @@ if platform.system() == 'Windows':
         pass
 
 # ============ API配置 ============
-# 默认从环境变量读取（本地开发可配置，部署时为空）
-DEFAULT_DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
-DEFAULT_SERPER_API_KEY = os.getenv("SERPER_API_KEY", "")
+# 直接配置API密钥（内置密钥，无需用户配置）
+DEFAULT_DEEPSEEK_API_KEY = "sk-293dec7fabb54606b4f8d4f606da3383"
+DEFAULT_SERPER_API_KEY = "d3654e36956e0bf331e901886c49c602cea72eb1"
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
+
+# 全局API密钥（直接使用，不需要用户配置）
+DEEPSEEK_API_KEY = DEFAULT_DEEPSEEK_API_KEY
+SERPER_API_KEY = DEFAULT_SERPER_API_KEY
 
 
 class EnhancedNewsSearcher:
@@ -1287,110 +1291,35 @@ def create_report_professional(custom_date_str, symbol, commodity_name, user_des
 # ============ Streamlit应用 ============
 st.set_page_config(page_title="期货日报生成器（AI赋能版）", page_icon="📊", layout="wide")
 
-# ============ 侧边栏：API配置 ============
-st.sidebar.title("⚙️ API配置")
-st.sidebar.markdown("请输入您的API密钥以使用AI功能")
+# ============ 侧边栏：系统信息 ============
+st.sidebar.title("📊 期货日报生成器")
+st.sidebar.markdown("**AI赋能版**")
+st.sidebar.markdown("---")
 
-# 初始化API密钥的session state
-if 'deepseek_api_key' not in st.session_state:
-    st.session_state.deepseek_api_key = DEFAULT_DEEPSEEK_API_KEY
-if 'serper_api_key' not in st.session_state:
-    st.session_state.serper_api_key = DEFAULT_SERPER_API_KEY
-
-# DeepSeek API配置
-st.sidebar.subheader("1️⃣ DeepSeek API")
-deepseek_key_input = st.sidebar.text_input(
-    "DeepSeek API Key",
-    value=st.session_state.deepseek_api_key if st.session_state.deepseek_api_key else DEFAULT_DEEPSEEK_API_KEY,
-    type="password",
-    help="用于AI生成行情描述、主要观点和新闻资讯",
-    key="deepseek_input"
-)
-
-if deepseek_key_input:
-    if deepseek_key_input.startswith("sk-"):
-        st.sidebar.success("✅ DeepSeek API已配置")
-        st.session_state.deepseek_api_key = deepseek_key_input
-        DEEPSEEK_API_KEY = deepseek_key_input
-    else:
-        st.sidebar.error("❌ DeepSeek API格式错误（应以sk-开头）")
-        DEEPSEEK_API_KEY = ""
-else:
-    st.sidebar.warning("⚠️ 未配置DeepSeek API")
-    DEEPSEEK_API_KEY = st.session_state.deepseek_api_key if st.session_state.deepseek_api_key else ""
+# 系统状态
+st.sidebar.subheader("✅ 系统状态")
+st.sidebar.success("🤖 DeepSeek AI - 已就绪")
+st.sidebar.success("🔍 Serper搜索 - 已就绪")
+st.sidebar.success("📈 数据接口 - 已就绪")
 
 st.sidebar.markdown("---")
 
-# Serper API配置
-st.sidebar.subheader("2️⃣ Serper API")
-serper_key_input = st.sidebar.text_input(
-    "Serper API Key",
-    value=st.session_state.serper_api_key if st.session_state.serper_api_key else DEFAULT_SERPER_API_KEY,
-    type="password",
-    help="用于搜索新闻资讯和专业数据",
-    key="serper_input"
-)
-
-if serper_key_input:
-    if len(serper_key_input) >= 30:  # Serper密钥通常较长
-        st.sidebar.success("✅ Serper API已配置")
-        st.session_state.serper_api_key = serper_key_input
-        SERPER_API_KEY = serper_key_input
-    else:
-        st.sidebar.error("❌ Serper API格式错误")
-        SERPER_API_KEY = ""
-else:
-    st.sidebar.warning("⚠️ 未配置Serper API")
-    SERPER_API_KEY = st.session_state.serper_api_key if st.session_state.serper_api_key else ""
+# 功能说明
+st.sidebar.subheader("🎯 核心功能")
+st.sidebar.markdown("""
+- 📊 自动生成K线图
+- 🤖 AI智能行情分析
+- 🧠 8维度专业观点
+- 📰 多源新闻聚合
+- 📄 一键生成日报
+""")
 
 st.sidebar.markdown("---")
-
-# 配置状态总览
-st.sidebar.subheader("📊 配置状态")
-config_status = []
-if DEEPSEEK_API_KEY:
-    config_status.append("✅ DeepSeek API")
-else:
-    config_status.append("❌ DeepSeek API")
-
-if SERPER_API_KEY:
-    config_status.append("✅ Serper API")
-else:
-    config_status.append("❌ Serper API")
-
-for status in config_status:
-    st.sidebar.markdown(status)
-
-# 功能可用性提示
-if not DEEPSEEK_API_KEY:
-    st.sidebar.error("⚠️ AI生成功能不可用")
-if not SERPER_API_KEY:
-    st.sidebar.error("⚠️ 新闻搜索功能受限")
-
-# API申请指引
-with st.sidebar.expander("🔗 API申请指引"):
-    st.markdown("""
-    **DeepSeek API**
-    - 官网：https://platform.deepseek.com/
-    - 注册后可获取API密钥
-    - 新用户有免费额度
-    
-    **Serper API**
-    - 官网：https://serper.dev/
-    - 注册后可获取API密钥
-    - 新用户免费2,500次搜索
-    """)
-
-st.sidebar.markdown("---")
-st.sidebar.markdown("💡 **提示**：API密钥仅在当前会话有效，不会被存储")
+st.sidebar.info("💡 所有AI功能已内置配置，可直接使用")
 
 # ============ 主界面 ============
 st.title("📊 期货日报生成器（AI赋能版）")
 st.write("**created by 7haoge (953534947@qq.com)**")
-
-# 显示配置警告
-if not DEEPSEEK_API_KEY or not SERPER_API_KEY:
-    st.warning("⚠️ 请在左侧边栏配置API密钥以使用完整功能")
 
 st.markdown("---")
 
@@ -1614,9 +1543,7 @@ with col_desc2:
     st.write("")
     st.write("")
     if st.button("🤖 AI生成行情描述", use_container_width=True):
-        if not DEEPSEEK_API_KEY:
-            st.error("❌ 请先在左侧边栏配置DeepSeek API密钥")
-        elif not st.session_state.get('market_data_dict'):
+        if not st.session_state.get('market_data_dict'):
             st.warning("⚠️ 请先生成K线图以获取市场数据")
         elif not st.session_state.get('commodity_name'):
             st.warning("⚠️ 请先输入品种名称并生成K线图")
@@ -1661,11 +1588,7 @@ with col_view2:
     st.write("")
     st.write("")
     if st.button("🧠 AI生成主要观点（专业版）", use_container_width=True):
-        if not DEEPSEEK_API_KEY:
-            st.error("❌ 请先在左侧边栏配置DeepSeek API密钥")
-        elif not SERPER_API_KEY:
-            st.error("❌ 请先在左侧边栏配置Serper API密钥（用于获取专业数据）")
-        elif not st.session_state.get('market_data_dict'):
+        if not st.session_state.get('market_data_dict'):
             st.warning("⚠️ 请先生成K线图以获取市场数据")
         elif not st.session_state.get('commodity_name'):
             st.warning("⚠️ 请先输入品种名称并生成K线图")
@@ -1700,7 +1623,7 @@ with col_view2:
                 # 第3步：AI综合分析生成观点
                 with st.spinner("🤖 AI正在进行8大维度专业分析并生成观点...请稍候"):
                     # 显示调试信息（仅开发模式）
-                    debug_mode = True  # 设置为True可在UI显示调试信息
+                    debug_mode = False  # 设置为True可在UI显示调试信息
                     if debug_mode:
                         st.info(f"🔧 调试：品种={st.session_state.commodity_name}, 日期={st.session_state.custom_date.strftime('%Y-%m-%d')}")
                         st.info(f"🔧 调试：API密钥长度={len(DEEPSEEK_API_KEY)}字符")
@@ -1763,9 +1686,7 @@ with col_news2:
     st.write("")
     st.write("")
     if st.button("📰 AI生成新闻资讯", use_container_width=True):
-        if not DEEPSEEK_API_KEY:
-            st.error("❌ 请先在左侧边栏配置DeepSeek API密钥")
-        elif not st.session_state.get('news_list'):
+        if not st.session_state.get('news_list'):
             st.warning("⚠️ 请先生成K线图以获取新闻数据")
         elif not st.session_state.get('commodity_name'):
             st.warning("⚠️ 请先输入品种名称并生成K线图")
