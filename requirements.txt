@@ -1,0 +1,10 @@
+streamlit
+akshare
+pandas
+matplotlib
+mplfinance
+python-docx
+requests
+beautifulsoup4
+feedparser
+lxml

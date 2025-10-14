@@ -1,0 +1,81 @@
+# 环境变量文件（不要上传API密钥）
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 虚拟环境
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+
+# 系统文件
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# 日志文件
+*.log
+
+# 生成的文件和文件夹
+k_line_chart.png
+期货日报_*/
+*.docx
+temp/
+output/
+
+# 测试文件
+test_*.py
+*_test.py
+
+# 个人笔记
+notes.md
+TODO.txt
+scratch.py
+
+# 批处理文件（本地使用）
+*.bat
+
+# 备份文件
+*_backup.py
+*.bak
+
