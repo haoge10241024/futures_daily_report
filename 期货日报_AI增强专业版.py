@@ -1501,12 +1501,23 @@ if 'ai_generated_news' not in st.session_state:
     st.session_state.ai_generated_news = ""
 if 'professional_data' not in st.session_state:
     st.session_state.professional_data = {}
+if 'commodity_name' not in st.session_state:
+    st.session_state.commodity_name = ""
+if 'full_contract' not in st.session_state:
+    st.session_state.full_contract = ""
+if 'custom_date' not in st.session_state:
+    st.session_state.custom_date = datetime.now()
 
 # K线图生成
 if st.button("🎨 生成K线图", type="primary"):
     if not full_contract or not commodity_name:
         st.error("❌ 请先输入品种名称和完整合约代码")
     else:
+        # 保存用户输入到session state
+        st.session_state.commodity_name = commodity_name
+        st.session_state.full_contract = full_contract
+        st.session_state.custom_date = custom_date
+        
         with st.spinner("正在生成K线图..."):
             custom_date_str = custom_date.strftime('%Y-%m-%d')
             day_description, night_description, market_data, market_data_dict = get_market_trend_data(full_contract, custom_date)
@@ -1573,15 +1584,15 @@ with col_desc2:
             st.error("❌ 请先在左侧边栏配置DeepSeek API密钥")
         elif not st.session_state.get('market_data_dict'):
             st.warning("⚠️ 请先生成K线图以获取市场数据")
-        elif not commodity_name:
-            st.warning("⚠️ 请先输入品种名称")
+        elif not st.session_state.get('commodity_name'):
+            st.warning("⚠️ 请先输入品种名称并生成K线图")
         else:
             try:
                 with st.spinner("🤖 AI正在生成行情描述...请稍候"):
                     ai_desc = ai_generate_market_description(
                         st.session_state.market_data_dict,
-                        commodity_name,
-                        custom_date.strftime('%Y-%m-%d')
+                        st.session_state.commodity_name,
+                        st.session_state.custom_date.strftime('%Y-%m-%d')
                     )
                     if ai_desc and not ai_desc.startswith("AI生成失败") and not ai_desc.startswith("AI生成出错"):
                         # 保存到独立的session state变量
@@ -1619,8 +1630,8 @@ with col_view2:
             st.error("❌ 请先在左侧边栏配置Serper API密钥（用于获取专业数据）")
         elif not st.session_state.get('market_data_dict'):
             st.warning("⚠️ 请先生成K线图以获取市场数据")
-        elif not commodity_name:
-            st.warning("⚠️ 请先输入品种名称")
+        elif not st.session_state.get('commodity_name'):
+            st.warning("⚠️ 请先输入品种名称并生成K线图")
         else:
             try:
                 # 第1步：计算技术指标
@@ -1636,9 +1647,9 @@ with col_view2:
                 with st.spinner("🔍 正在搜索8大维度专业数据（库存、基差、持仓等）...这可能需要30-60秒"):
                     searcher = EnhancedNewsSearcher()
                     professional_data = searcher.search_professional_data(
-                        commodity_name,
+                        st.session_state.commodity_name,
                         SERPER_API_KEY,
-                        custom_date.strftime('%Y-%m-%d')
+                        st.session_state.custom_date.strftime('%Y-%m-%d')
                     )
                     # 保存到session state供新闻资讯使用
                     st.session_state.professional_data = professional_data if professional_data else {}
@@ -1652,8 +1663,8 @@ with col_view2:
                 # 第3步：AI综合分析生成观点
                 with st.spinner("🤖 AI正在进行8大维度专业分析并生成观点...请稍候"):
                     ai_view = ai_generate_main_view(
-                        commodity_name,
-                        custom_date.strftime('%Y-%m-%d'),
+                        st.session_state.commodity_name,
+                        st.session_state.custom_date.strftime('%Y-%m-%d'),
                         st.session_state.market_data_dict,
                         st.session_state.news_list,
                         professional_data,  # 传入专业数据
@@ -1704,14 +1715,14 @@ with col_news2:
             st.error("❌ 请先在左侧边栏配置DeepSeek API密钥")
         elif not st.session_state.get('news_list'):
             st.warning("⚠️ 请先生成K线图以获取新闻数据")
-        elif not commodity_name:
-            st.warning("⚠️ 请先输入品种名称")
+        elif not st.session_state.get('commodity_name'):
+            st.warning("⚠️ 请先输入品种名称并生成K线图")
         else:
             try:
                 with st.spinner("🤖 AI正在整理新闻资讯...请稍候"):
                     ai_news = ai_generate_news_summary(
-                        commodity_name,
-                        custom_date.strftime('%Y-%m-%d'),
+                        st.session_state.commodity_name,
+                        st.session_state.custom_date.strftime('%Y-%m-%d'),
                         st.session_state.news_list,
                         st.session_state.get('professional_data', {})
                     )
