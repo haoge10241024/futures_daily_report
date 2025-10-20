@@ -43,7 +43,7 @@ if platform.system() == 'Windows':
 # ============ API配置 ============
 # 直接配置API密钥（内置密钥，无需用户配置）
 DEFAULT_DEEPSEEK_API_KEY = "sk-293dec7fabb54606b4f8d4f606da3383"
-DEFAULT_SERPER_API_KEY = "d3654e36956e0bf331e901886c49c602cea72eb1"
+DEFAULT_SERPER_API_KEY = "04555ec0f2ce150d1cb628c7a80e2e433e193535"
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
 # 全局API密钥（直接使用，不需要用户配置）
