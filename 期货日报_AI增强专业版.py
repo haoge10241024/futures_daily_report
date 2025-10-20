@@ -1579,7 +1579,7 @@ with col_desc2:
     # 显示已生成的内容（如果有）
     if st.session_state.get('temp_ai_desc'):
         st.write("📝 生成的行情描述：")
-        st.text_area("", value=st.session_state.temp_ai_desc, height=200, key="display_ai_desc", label_visibility="collapsed")
+        st.text_area("AI生成的行情描述", value=st.session_state.temp_ai_desc, height=200, key="display_ai_desc", label_visibility="collapsed")
         st.caption("💡 请复制上面的内容到上方输入框")
 
 # 主要观点区域
@@ -1646,7 +1646,7 @@ with col_view2:
     # 显示已生成的内容（如果有）
     if st.session_state.get('temp_ai_view'):
         st.write("📝 生成的主要观点：")
-        st.text_area("", value=st.session_state.temp_ai_view, height=250, key="display_ai_view", label_visibility="collapsed")
+        st.text_area("AI生成的主要观点", value=st.session_state.temp_ai_view, height=250, key="display_ai_view", label_visibility="collapsed")
         st.caption("💡 请复制上面的内容到上方输入框")
 
 # 新闻资讯区域
@@ -1685,12 +1685,24 @@ with col_news2:
             st.warning("⚠️ 请先输入品种名称并生成K线图")
         else:
             try:
+                # 如果professional_data不存在，先搜索一次
+                professional_data = st.session_state.get('professional_data')
+                if not professional_data:
+                    with st.spinner("🔍 正在搜索专业数据..."):
+                        searcher = EnhancedNewsSearcher()
+                        professional_data = searcher.search_professional_data(
+                            st.session_state.commodity_name,
+                            SERPER_API_KEY,
+                            st.session_state.custom_date.strftime('%Y-%m-%d')
+                        )
+                        st.session_state.professional_data = professional_data if professional_data else {}
+                
                 with st.spinner("🤖 AI正在整理新闻资讯..."):
                     ai_news = ai_generate_news_summary(
                         st.session_state.commodity_name,
                         st.session_state.custom_date.strftime('%Y-%m-%d'),
                         st.session_state.news_list,
-                        st.session_state.get('professional_data', {})
+                        professional_data or {}
                     )
                 
                 if ai_news and len(ai_news) > 50:
@@ -1705,7 +1717,7 @@ with col_news2:
     # 显示已生成的内容（如果有）
     if st.session_state.get('temp_ai_news'):
         st.write("📝 生成的新闻资讯：")
-        st.text_area("", value=st.session_state.temp_ai_news, height=300, key="display_ai_news", label_visibility="collapsed")
+        st.text_area("AI生成的新闻资讯", value=st.session_state.temp_ai_news, height=300, key="display_ai_news", label_visibility="collapsed")
         st.caption("💡 请复制上面的内容到上方输入框")
     else:
         st.write("")
